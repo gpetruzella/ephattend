@@ -40,6 +40,7 @@
             font-weight: bold;
             display: inline-block;
             margin: 10px 0;
+            font-size: 16px;
         }
         .bookmarklet:hover {
             background: #0056b3;
@@ -67,6 +68,24 @@
             border-radius: 6px;
             margin: 20px 0;
         }
+        .manual-instructions {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .copy-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            user-select: all;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -90,194 +109,27 @@
     <div class="step">
         <h3>🔧 Installation</h3>
         <p><strong>Drag this button to your bookmarks bar:</strong></p>
-        <a href="javascript:(function(){
-            /* Canvas QR Generator Bookmarklet */
-            if(document.getElementById('qr-generator-overlay')){return;}
-            
-            /* Load required libraries */
-            const libs = [
-                'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
-            ];
-            
-            let loadedCount = 0;
-            
-            function loadLib(src, callback) {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = () => {
-                    loadedCount++;
-                    if(loadedCount === libs.length) callback();
-                };
-                document.head.appendChild(script);
-            }
-            
-            function loadAllLibs(callback) {
-                libs.forEach(lib => loadLib(lib, callback));
-            }
-            
-            /* Create overlay UI */
-            function createOverlay() {
-                const overlay = document.createElement('div');
-                overlay.id = 'qr-generator-overlay';
-                overlay.innerHTML = `
-                    <div style='position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;'>
-                        <div style='background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;'>
-                            <h2 style='margin-top: 0; color: #333;'>📋 Students Found</h2>
-                            <div id='student-list' style='max-height: 300px; overflow-y: auto; margin: 20px 0; border: 1px solid #ddd; border-radius: 5px; padding: 15px;'></div>
-                            <div style='text-align: center; margin: 20px 0;'>
-                                <button id='generate-qr-btn' style='background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px;'>Generate QR Codes PDF</button>
-                                <button id='close-overlay-btn' style='background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;'>Cancel</button>
-                            </div>
-                            <div id='status' style='margin-top: 15px; text-align: center; color: #666;'></div>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-            }
-            
-            /* Extract student data from Canvas */
-            function extractStudents() {
-                const students = [];
-                
-                /* Try different Canvas layouts */
-                const selectors = [
-                    'tr[data-testid*=\"user\"] td a[href*=\"/users/\"]', /* Table layout */
-                    '.roster_user_name a', /* Classic roster */
-                    '[data-testid=\"user-row\"] a[href*=\"/users/\"]', /* New Canvas */
-                    '.student_roster .student .name a' /* Alternative layout */
-                ];
-                
-                for(const selector of selectors) {
-                    const elements = document.querySelectorAll(selector);
-                    if(elements.length > 0) {
-                        elements.forEach(el => {
-                            const name = el.textContent.trim();
-                            const href = el.href;
-                            const idMatch = href.match(/users\/(\d+)/);
-                            const id = idMatch ? idMatch[1] : '';
-                            
-                            if(name && id && !students.find(s => s.id === id)) {
-                                students.push({name, id, displayText: `${name} (${id})`});
-                            }
-                        });
-                        break;
-                    }
-                }
-                
-                /* Fallback: try to find any student-like data */
-                if(students.length === 0) {
-                    const possibleNames = document.querySelectorAll('a[href*=\"/users/\"]');
-                    possibleNames.forEach(el => {
-                        const name = el.textContent.trim();
-                        const href = el.href;
-                        const idMatch = href.match(/users\/(\d+)/);
-                        const id = idMatch ? idMatch[1] : '';
-                        
-                        if(name && id && name.length > 2 && !students.find(s => s.id === id)) {
-                            students.push({name, id, displayText: `${name} (${id})`});
-                        }
-                    });
-                }
-                
-                return students;
-            }
-            
-            /* Generate PDF with QR codes */
-            async function generateQRPDF(students) {
-                const statusEl = document.getElementById('status');
-                statusEl.textContent = 'Generating QR codes...';
-                
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF();
-                
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const margin = 20;
-                const qrSize = 40;
-                const cols = 2;
-                const rows = 6;
-                const cellWidth = (pageWidth - margin * 2) / cols;
-                const cellHeight = (pageHeight - margin * 2) / rows;
-                
-                let currentPage = 1;
-                let currentRow = 0;
-                let currentCol = 0;
-                
-                /* Add title to first page */
-                pdf.setFontSize(16);
-                pdf.text('Student QR Codes', pageWidth / 2, 15, { align: 'center' });
-                
-                for(let i = 0; i < students.length; i++) {
-                    const student = students[i];
-                    statusEl.textContent = `Processing ${i + 1}/${students.length}: ${student.name}`;
-                    
-                    /* Generate QR code */
-                    const canvas = document.createElement('canvas');
-                    await QRCode.toCanvas(canvas, student.displayText, { width: 200, margin: 1 });
-                    const qrDataUrl = canvas.toDataURL();
-                    
-                    /* Calculate position */
-                    const x = margin + currentCol * cellWidth;
-                    const y = margin + 20 + currentRow * cellHeight;
-                    
-                    /* Add QR code */
-                    pdf.addImage(qrDataUrl, 'PNG', x + (cellWidth - qrSize) / 2, y, qrSize, qrSize);
-                    
-                    /* Add student name */
-                    pdf.setFontSize(10);
-                    pdf.text(student.name, x + cellWidth / 2, y + qrSize + 8, { align: 'center', maxWidth: cellWidth - 5 });
-                    pdf.text(`ID: ${student.id}`, x + cellWidth / 2, y + qrSize + 15, { align: 'center', maxWidth: cellWidth - 5 });
-                    
-                    /* Move to next position */
-                    currentCol++;
-                    if(currentCol >= cols) {
-                        currentCol = 0;
-                        currentRow++;
-                        if(currentRow >= rows) {
-                            currentRow = 0;
-                            pdf.addPage();
-                            pdf.setFontSize(16);
-                            pdf.text('Student QR Codes (continued)', pageWidth / 2, 15, { align: 'center' });
-                        }
-                    }
-                }
-                
-                /* Save PDF */
-                const courseName = document.title.split(':')[0] || 'Course';
-                const fileName = `${courseName.replace(/[^a-zA-Z0-9]/g, '_')}_QR_Codes.pdf`;
-                pdf.save(fileName);
-                
-                statusEl.innerHTML = `<span style='color: #28a745;'>✅ Generated ${students.length} QR codes!</span>`;
-            }
-            
-            /* Main execution */
-            createOverlay();
-            const students = extractStudents();
-            
-            if(students.length === 0) {
-                document.getElementById('student-list').innerHTML = '<p style=\"color: red;\">⚠️ No students found. Make sure you\\'re on the Canvas People page and students are visible.</p>';
-                document.getElementById('generate-qr-btn').disabled = true;
-                return;
-            }
-            
-            /* Display found students */
-            const listEl = document.getElementById('student-list');
-            listEl.innerHTML = `<p><strong>Found ${students.length} students:</strong></p>` + 
-                students.map(s => `<div style='padding: 5px; border-bottom: 1px solid #eee;'>${s.displayText}</div>`).join('');
-            
-            /* Event listeners */
-            document.getElementById('close-overlay-btn').onclick = () => {
-                document.body.removeChild(overlay);
-            };
-            
-            document.getElementById('generate-qr-btn').onclick = () => {
-                loadAllLibs(() => generateQRPDF(students));
-            };
-        })();" class="bookmarklet">📋 Generate Canvas QR Codes</a>
+        
+        <a href="javascript:(function(){var s=document.createElement('script');s.src='https://yourusername.github.io/your-repo/canvas-qr-script.js?v='+Date.now();s.onload=function(){if(window.generateCanvasQR){window.generateCanvasQR()}else{alert('Script failed to load. Please try again.');}};document.head.appendChild(s);})();" class="bookmarklet">📋 Generate Canvas QR Codes</a>
         
         <div class="warning">
-            <strong>Desktop browsers only:</strong> Drag the blue button above to your bookmarks bar. On mobile, copy the button text and create a bookmark manually.
+            <strong>⚠️ Update Required:</strong> Replace <code>yourusername.github.io/your-repo</code> in the button above with your actual GitHub Pages URL before using!
+        </div>
+
+        <div class="manual-instructions">
+            <h4>Manual Setup (if drag doesn't work):</h4>
+            <ol>
+                <li>Copy the code below</li>
+                <li>Create a new bookmark in your browser</li>
+                <li>Paste the code as the URL</li>
+                <li>Name it "Canvas QR Generator"</li>
+            </ol>
+            
+            <p><strong>Bookmarklet Code:</strong></p>
+            <div class="copy-area" id="bookmarklet-code">
+                javascript:(function(){var s=document.createElement('script');s.src='https://yourusername.github.io/your-repo/canvas-qr-script.js?v='+Date.now();s.onload=function(){if(window.generateCanvasQR){window.generateCanvasQR()}else{alert('Script failed to load. Please try again.');}};document.head.appendChild(s);})();
+            </div>
+            <button onclick="copyBookmarkletCode()">📋 Copy Code</button>
         </div>
     </div>
 
@@ -341,5 +193,27 @@
             <li><strong>Students scan their QR codes</strong> for instant attendance</li>
         </ol>
     </div>
+
+    <script>
+        function copyBookmarkletCode() {
+            const codeElement = document.getElementById('bookmarklet-code');
+            const text = codeElement.textContent;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Bookmarklet code copied to clipboard!');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Bookmarklet code copied to clipboard!');
+            }
+        }
+    </script>
 </body>
 </html>
