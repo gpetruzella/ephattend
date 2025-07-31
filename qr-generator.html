@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas QR Code Generator - Bookmarklet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .bookmarklet {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .bookmarklet:hover {
+            background: #0056b3;
+            color: white;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🎓 Canvas QR Code Generator</h1>
+        <p>Generate QR codes for all your students directly from Canvas People page</p>
+        <p><strong>Completely Local • No Data Collection • Works Offline</strong></p>
+    </div>
+
+    <div class="step">
+        <h3>📖 How It Works</h3>
+        <p>This bookmarklet runs JavaScript directly on your Canvas People page to:</p>
+        <ul>
+            <li>Extract student names and IDs from the current page</li>
+            <li>Generate QR codes for each student</li>
+            <li>Create a downloadable PDF with all QR codes</li>
+            <li>All processing happens locally in your browser</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h3>🔧 Installation</h3>
+        <p><strong>Drag this button to your bookmarks bar:</strong></p>
+        <a href="javascript:(function(){
+            /* Canvas QR Generator Bookmarklet */
+            if(document.getElementById('qr-generator-overlay')){return;}
+            
+            /* Load required libraries */
+            const libs = [
+                'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+            ];
+            
+            let loadedCount = 0;
+            
+            function loadLib(src, callback) {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    loadedCount++;
+                    if(loadedCount === libs.length) callback();
+                };
+                document.head.appendChild(script);
+            }
+            
+            function loadAllLibs(callback) {
+                libs.forEach(lib => loadLib(lib, callback));
+            }
+            
+            /* Create overlay UI */
+            function createOverlay() {
+                const overlay = document.createElement('div');
+                overlay.id = 'qr-generator-overlay';
+                overlay.innerHTML = `
+                    <div style='position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;'>
+                        <div style='background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;'>
+                            <h2 style='margin-top: 0; color: #333;'>📋 Students Found</h2>
+                            <div id='student-list' style='max-height: 300px; overflow-y: auto; margin: 20px 0; border: 1px solid #ddd; border-radius: 5px; padding: 15px;'></div>
+                            <div style='text-align: center; margin: 20px 0;'>
+                                <button id='generate-qr-btn' style='background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px;'>Generate QR Codes PDF</button>
+                                <button id='close-overlay-btn' style='background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;'>Cancel</button>
+                            </div>
+                            <div id='status' style='margin-top: 15px; text-align: center; color: #666;'></div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            
+            /* Extract student data from Canvas */
+            function extractStudents() {
+                const students = [];
+                
+                /* Try different Canvas layouts */
+                const selectors = [
+                    'tr[data-testid*=\"user\"] td a[href*=\"/users/\"]', /* Table layout */
+                    '.roster_user_name a', /* Classic roster */
+                    '[data-testid=\"user-row\"] a[href*=\"/users/\"]', /* New Canvas */
+                    '.student_roster .student .name a' /* Alternative layout */
+                ];
+                
+                for(const selector of selectors) {
+                    const elements = document.querySelectorAll(selector);
+                    if(elements.length > 0) {
+                        elements.forEach(el => {
+                            const name = el.textContent.trim();
+                            const href = el.href;
+                            const idMatch = href.match(/users\/(\d+)/);
+                            const id = idMatch ? idMatch[1] : '';
+                            
+                            if(name && id && !students.find(s => s.id === id)) {
+                                students.push({name, id, displayText: `${name} (${id})`});
+                            }
+                        });
+                        break;
+                    }
+                }
+                
+                /* Fallback: try to find any student-like data */
+                if(students.length === 0) {
+                    const possibleNames = document.querySelectorAll('a[href*=\"/users/\"]');
+                    possibleNames.forEach(el => {
+                        const name = el.textContent.trim();
+                        const href = el.href;
+                        const idMatch = href.match(/users\/(\d+)/);
+                        const id = idMatch ? idMatch[1] : '';
+                        
+                        if(name && id && name.length > 2 && !students.find(s => s.id === id)) {
+                            students.push({name, id, displayText: `${name} (${id})`});
+                        }
+                    });
+                }
+                
+                return students;
+            }
+            
+            /* Generate PDF with QR codes */
+            async function generateQRPDF(students) {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = 'Generating QR codes...';
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 20;
+                const qrSize = 40;
+                const cols = 2;
+                const rows = 6;
+                const cellWidth = (pageWidth - margin * 2) / cols;
+                const cellHeight = (pageHeight - margin * 2) / rows;
+                
+                let currentPage = 1;
+                let currentRow = 0;
+                let currentCol = 0;
+                
+                /* Add title to first page */
+                pdf.setFontSize(16);
+                pdf.text('Student QR Codes', pageWidth / 2, 15, { align: 'center' });
+                
+                for(let i = 0; i < students.length; i++) {
+                    const student = students[i];
+                    statusEl.textContent = `Processing ${i + 1}/${students.length}: ${student.name}`;
+                    
+                    /* Generate QR code */
+                    const canvas = document.createElement('canvas');
+                    await QRCode.toCanvas(canvas, student.displayText, { width: 200, margin: 1 });
+                    const qrDataUrl = canvas.toDataURL();
+                    
+                    /* Calculate position */
+                    const x = margin + currentCol * cellWidth;
+                    const y = margin + 20 + currentRow * cellHeight;
+                    
+                    /* Add QR code */
+                    pdf.addImage(qrDataUrl, 'PNG', x + (cellWidth - qrSize) / 2, y, qrSize, qrSize);
+                    
+                    /* Add student name */
+                    pdf.setFontSize(10);
+                    pdf.text(student.name, x + cellWidth / 2, y + qrSize + 8, { align: 'center', maxWidth: cellWidth - 5 });
+                    pdf.text(`ID: ${student.id}`, x + cellWidth / 2, y + qrSize + 15, { align: 'center', maxWidth: cellWidth - 5 });
+                    
+                    /* Move to next position */
+                    currentCol++;
+                    if(currentCol >= cols) {
+                        currentCol = 0;
+                        currentRow++;
+                        if(currentRow >= rows) {
+                            currentRow = 0;
+                            pdf.addPage();
+                            pdf.setFontSize(16);
+                            pdf.text('Student QR Codes (continued)', pageWidth / 2, 15, { align: 'center' });
+                        }
+                    }
+                }
+                
+                /* Save PDF */
+                const courseName = document.title.split(':')[0] || 'Course';
+                const fileName = `${courseName.replace(/[^a-zA-Z0-9]/g, '_')}_QR_Codes.pdf`;
+                pdf.save(fileName);
+                
+                statusEl.innerHTML = `<span style='color: #28a745;'>✅ Generated ${students.length} QR codes!</span>`;
+            }
+            
+            /* Main execution */
+            createOverlay();
+            const students = extractStudents();
+            
+            if(students.length === 0) {
+                document.getElementById('student-list').innerHTML = '<p style=\"color: red;\">⚠️ No students found. Make sure you\\'re on the Canvas People page and students are visible.</p>';
+                document.getElementById('generate-qr-btn').disabled = true;
+                return;
+            }
+            
+            /* Display found students */
+            const listEl = document.getElementById('student-list');
+            listEl.innerHTML = `<p><strong>Found ${students.length} students:</strong></p>` + 
+                students.map(s => `<div style='padding: 5px; border-bottom: 1px solid #eee;'>${s.displayText}</div>`).join('');
+            
+            /* Event listeners */
+            document.getElementById('close-overlay-btn').onclick = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            document.getElementById('generate-qr-btn').onclick = () => {
+                loadAllLibs(() => generateQRPDF(students));
+            };
+        })();" class="bookmarklet">📋 Generate Canvas QR Codes</a>
+        
+        <div class="warning">
+            <strong>Desktop browsers only:</strong> Drag the blue button above to your bookmarks bar. On mobile, copy the button text and create a bookmark manually.
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>📋 Usage Instructions</h3>
+        <ol>
+            <li><strong>Navigate to your Canvas course People page</strong></li>
+            <li><strong>Make sure students are visible</strong> (scroll down if needed to load all students)</li>
+            <li><strong>Click the bookmarklet</strong> in your bookmarks bar</li>
+            <li><strong>Review the found students</strong> in the popup</li>
+            <li><strong>Click "Generate QR Codes PDF"</strong></li>
+            <li><strong>Download completes automatically</strong> - ready to print!</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>📄 PDF Output</h3>
+        <p>The generated PDF contains:</p>
+        <ul>
+            <li><strong>2 columns × 6 rows</strong> of QR codes per page</li>
+            <li><strong>Student name and ID</strong> below each QR code</li>
+            <li><strong>Multiple pages</strong> if you have many students</li>
+            <li><strong>Print-ready format</strong> for easy distribution</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h4>🔒 Privacy Notes</h4>
+        <ul>
+            <li><strong>Everything runs locally</strong> in your browser</li>
+            <li><strong>No data is sent</strong> to external servers</li>
+            <li><strong>Student data never leaves</strong> your device</li>
+            <li><strong>Works offline</strong> after libraries are cached</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h3>🔧 Troubleshooting</h3>
+        <p><strong>No students found?</strong></p>
+        <ul>
+            <li>Make sure you're on the Canvas <code>People</code> page</li>
+            <li>Scroll down to load all students (Canvas lazy-loads)</li>
+            <li>Try refreshing the page and running again</li>
+        </ul>
+        
+        <p><strong>PDF not generating?</strong></p>
+        <ul>
+            <li>Check that pop-ups are allowed for Canvas</li>
+            <li>Ensure your browser allows file downloads</li>
+            <li>Try running on a desktop browser for best results</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h3>🎯 Next Steps</h3>
+        <p>After generating QR codes:</p>
+        <ol>
+            <li><strong>Print the PDF</strong> and cut out individual QR codes</li>
+            <li><strong>Distribute to students</strong> (email, hand out, etc.)</li>
+            <li><strong>Use with the attendance scanner</strong> during class</li>
+            <li><strong>Students scan their QR codes</strong> for instant attendance</li>
+        </ol>
+    </div>
+</body>
+</html>
