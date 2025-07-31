@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance Scanner (Cumulative Prototype)</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="QR code attendance scanner for college classrooms">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Attendance Scanner">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon/Icons (optional - can use any small image) -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        #container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #video-container {
+            width: 100%;
+            max-width: 400px; /* Adjust as needed */
+            margin: 0 auto 20px auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9e9e9;
+            border-radius: 6px;
+        }
+        #attendance-section {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        #attendance-section h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        #attendance-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0 10px;
+            margin-bottom: 10px;
+        }
+        #attendance-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #attendance-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #attendance-list li:last-child {
+            border-bottom: none;
+        }
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #export-all-csv-btn {
+             background-color: #007bff;
+        }
+        #export-all-csv-btn:hover {
+             background-color: #0056b3;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .controls button {
+            flex: 1 1 auto; /* Allow buttons to grow and shrink */
+            min-width: 150px; /* Ensure they don't get too small */
+        }
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .date-select-container {
+            margin-bottom: 10px;
+        }
+        .date-select-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .date-select-container select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        .clear-day-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .clear-day-btn:hover {
+            background-color: #c82333;
+        }
+        /* PWA install prompt styling */
+        #install-prompt {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        #install-prompt button {
+            background-color: white;
+            color: #007bff;
+            margin-top: 10px;
+            width: auto;
+            display: inline-block;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- PWA Install Prompt -->
+        <div id="install-prompt">
+            <p>📱 Install this app for the best experience and reliable camera access!</p>
+            <button id="install-btn">Install App</button>
+            <button id="dismiss-install" style="background-color: transparent; color: white; border: 1px solid white;">Maybe Later</button>
+        </div>
+        
+        <h1>Class Attendance Scanner</h1>
+        <div id="video-container">
+            <video id="qr-video"></video>
+        </div>
+        <div id="output" style="text-align: center;">
+            <p>Scan a student's QR code.</p>
+            <p id="scanned-id-display" style="font-weight: bold; font-size: 1.2em; color: #007bff;"></p>
+        </div>
+        <button id="start-scan-btn">Start Scanning</button>
+        <button id="stop-scan-btn" style="display: none; background-color: #dc3545;">Stop Scanning</button>
+        <div class="controls">
+            <button id="export-all-csv-btn">Export All Attendance (CSV)</button>
+            <button id="clear-all-attendance-btn" style="background-color: #6c757d;">Clear All Saved Data</button>
+        </div>
+        <div id="attendance-section">
+            <div class="date-select-container">
+                <label for="date-selector">View Attendance For:</label>
+                <select id="date-selector"></select>
+            </div>
+            <h2>Attendance for <span id="current-viewing-date"></span></h2>
+            <div id="attendance-list">
+                <ul id="students-attended">
+                    </ul>
+                <p id="no-students-message">No students scanned yet for this day.</p>
+            </div>
+            <button id="clear-selected-day-btn" class="clear-day-btn">Clear Attendance for This Day</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        // PWA Installation Logic
+        let deferredPrompt;
+        const installPrompt = document.getElementById('install-prompt');
+        const installBtn = document.getElementById('install-btn');
+        const dismissInstallBtn = document.getElementById('dismiss-install');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installPrompt.style.display = 'none';
+            }
+        });
+
+        dismissInstallBtn.addEventListener('click', () => {
+            installPrompt.style.display = 'none';
+        });
+
+        // Hide install prompt if already installed
+        window.addEventListener('appinstalled', () => {
+            installPrompt.style.display = 'none';
+            console.log('PWA was installed');
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Your existing code (unchanged)
+        const video = document.getElementById('qr-video');
+        const outputDiv = document.getElementById('output');
+        const scannedIdDisplay = document.getElementById('scanned-id-display');
+        const startScanBtn = document.getElementById('start-scan-btn');
+        const stopScanBtn = document.getElementById('stop-scan-btn');
+        const exportAllCsvBtn = document.getElementById('export-all-csv-btn');
+        const clearAllAttendanceBtn = document.getElementById('clear-all-attendance-btn');
+        const studentsAttendedList = document.getElementById('students-attended');
+        const noStudentsMessage = document.getElementById('no-students-message');
+        const dateSelector = document.getElementById('date-selector');
+        const currentViewingDateSpan = document.getElementById('current-viewing-date');
+        const clearSelectedDayBtn = document.getElementById('clear-selected-day-btn');
+        const LOCAL_STORAGE_KEY = 'cumulative_attendance_records';
+        let stream;
+        let animationFrameId;
+        // `allAttendanceRecords` will be an object: { 'YYYY-MM-DD': [{ id: 'S123', time: 'HH:MM:SS' }], ... }
+        let allAttendanceRecords = {};
+        let currentDayScannedIds = new Set(); // To prevent duplicates for the *currently active* scanning day
+        // --- Utility Functions ---
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        function getTodayFormatted() {
+            return formatDate(new Date());
+        }
+        function saveAllAttendance() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allAttendanceRecords));
+        }
+        function loadAllAttendance() {
+            const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedData) {
+                allAttendanceRecords = JSON.parse(storedData);
+            } else {
+                allAttendanceRecords = {};
+            }
+            // Ensure the current day has an array initialized if it doesn't exist
+            const today = getTodayFormatted();
+            if (!allAttendanceRecords[today]) {
+                allAttendanceRecords[today] = [];
+            }
+            // Populate the current day's scanned ID set for scanning
+            currentDayScannedIds.clear();
+            allAttendanceRecords[today].forEach(item => currentDayScannedIds.add(item.id));
+            populateDateSelector();
+            renderAttendanceList(today); // Render attendance for today by default
+        }
+        function populateDateSelector() {
+            dateSelector.innerHTML = ''; // Clear existing options
+            const sortedDates = Object.keys(allAttendanceRecords).sort().reverse(); // Sort descending
+            const today = getTodayFormatted();
+            if (sortedDates.length === 0) {
+                // If no records, just add today
+                const option = document.createElement('option');
+                option.value = today;
+                option.textContent = `Today (${today})`;
+                dateSelector.appendChild(option);
+            } else {
+                // Add an option for "Today" if it's not the first in sortedDates
+                if (sortedDates[0] !== today) {
+                    const todayOption = document.createElement('option');
+                    todayOption.value = today;
+                    todayOption.textContent = `Today (${today})`;
+                    dateSelector.appendChild(todayOption);
+                }
+                sortedDates.forEach(date => {
+                    const option = document.createElement('option');
+                    option.value = date;
+                    option.textContent = date;
+                    dateSelector.appendChild(option);
+                });
+            }
+            dateSelector.value = today; // Select today's date
+            currentViewingDateSpan.textContent = dateSelector.value;
+        }
+        function renderAttendanceList(dateToView) {
+            studentsAttendedList.innerHTML = ''; // Clear existing list
+            const attendanceForDay = allAttendanceRecords[dateToView] || [];
+            if (attendanceForDay.length === 0) {
+                noStudentsMessage.style.display = 'block';
+                return;
+            } else {
+                noStudentsMessage.style.display = 'none';
+            }
+            attendanceForDay.forEach((student) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${student.id} - ${student.time}</span>
+                    <button class="remove-btn" data-id="${student.id}" data-date="${dateToView}">Remove</button>
+                `;
+                studentsAttendedList.appendChild(li);
+            });
+            currentViewingDateSpan.textContent = dateToView;
+        }
+        function removeStudentFromDay(idToRemove, dateToRemoveFrom) {
+            if (!allAttendanceRecords[dateToRemoveFrom]) return;
+            allAttendanceRecords[dateToRemoveFrom] = allAttendanceRecords[dateToRemoveFrom].filter(
+                student => student.id !== idToRemove
+            );
+            // If the removed student was from the *current* scanning day, update the set
+            if (dateToRemoveFrom === getTodayFormatted()) {
+                currentDayScannedIds.delete(idToRemove);
+            }
+            if (allAttendanceRecords[dateToRemoveFrom].length === 0) {
+                // If the day is now empty, remove the date key if it's not today's empty array
+                if (dateToRemoveFrom !== getTodayFormatted()) {
+                    delete allAttendanceRecords[dateToRemoveFrom];
+                }
+            }
+            saveAllAttendance();
+            populateDateSelector(); // Update options in case a day became empty and was removed
+            renderAttendanceList(dateToRemoveFrom); // Re-render the affected day
+        }
+        function exportAllAttendanceToCSV() {
+            if (Object.keys(allAttendanceRecords).length === 0) {
+                alert('No attendance data saved to export.');
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Student ID,Timestamp\n"; // CSV Header
+            const sortedDates = Object.keys(allAttendanceRecords).sort(); // Sort chronologically
+            sortedDates.forEach(date => {
+                const attendanceForDay = allAttendanceRecords[date];
+                if (attendanceForDay) {
+                    attendanceForDay.forEach(item => {
+                        csvContent += `${date},${item.id},${item.time}\n`;
+                    });
+                }
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `cumulative_attendance_${formatDate(new Date())}.csv`);
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+        function clearAllSavedAttendance() {
+            if (confirm('Are you sure you want to clear ALL saved attendance data? This cannot be undone.')) {
+                allAttendanceRecords = {};
+                currentDayScannedIds.clear();
+                saveAllAttendance(); // Save empty object
+                populateDateSelector(); // Re-populate with just today
+                renderAttendanceList(getTodayFormatted()); // Render for current day (now empty)
+                scannedIdDisplay.textContent = '';
+                outputDiv.querySelector('p').style.display = 'block'; // Show "Scan a student..." message
+            }
+        }
+        function clearAttendanceForSelectedDay() {
+            const dateToClear = dateSelector.value;
+            if (confirm(`Are you sure you want to clear attendance for ${dateToClear}? This cannot be undone.`)) {
+                if (dateToClear === getTodayFormatted()) {
+                    // If clearing today, just empty its array and the set
+                    allAttendanceRecords[dateToClear] = [];
+                    currentDayScannedIds.clear();
+                } else {
+                    // If clearing an past day, delete the key
+                    delete allAttendanceRecords[dateToClear];
+                }
+                saveAllAttendance();
+                populateDateSelector(); // Update options
+                // After clearing, re-render for today (or the next available date)
+                renderAttendanceList(getTodayFormatted());
+                scannedIdDisplay.textContent = '';
+                outputDiv.querySelector('p').style.display = 'block';
+            }
+        }
+        // --- QR Code Scanning Logic ---
+        const canvasElement = document.createElement('canvas');
+        const canvasContext = canvasElement.getContext('2d');
+        function drawLine(begin, end, color) {
+            canvasContext.beginPath();
+            canvasContext.moveTo(begin.x, begin.y);
+            canvasContext.lineTo(end.x, end.y);
+            canvasContext.lineWidth = 4;
+            canvasContext.strokeStyle = color;
+            canvasContext.stroke();
+        }
+        let lastScannedId = null; // To prevent rapid-fire multiple scans of the same ID
+        let lastScanTime = 0;
+        const SCAN_DEBOUNCE_MS = 1000; // Time in milliseconds to wait before allowing rescan of same ID
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+                if (code) {
+                    // Highlight the QR code in the video feed
+                    drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+                    drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+                    drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+                    drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+                    const studentId = code.data.trim();
+                    const now = new Date();
+                    const currentTime = now.getTime();
+                    // Debounce: If same ID scanned within debounce time, ignore
+                    if (studentId === lastScannedId && (currentTime - lastScanTime) < SCAN_DEBOUNCE_MS) {
+                        // Already handled, do nothing
+                    } else if (studentId && !currentDayScannedIds.has(studentId)) {
+                        // New student for today, add them
+                        const today = getTodayFormatted();
+                        const timeScanned = formatTime(now);
+                        if (!allAttendanceRecords[today]) {
+                            allAttendanceRecords[today] = [];
+                        }
+                        allAttendanceRecords[today].push({ id: studentId, time: timeScanned });
+                        currentDayScannedIds.add(studentId); // Add to the set for today's scans
+                        saveAllAttendance();
+                        renderAttendanceList(today); // Re-render current day's list
+                        populateDateSelector(); // Update date options in case it's a new day
+                        scannedIdDisplay.textContent = `Scanned: ${studentId}`;
+                        outputDiv.querySelector('p').style.display = 'none'; // Hide "Scan a student..." message
+                        console.log(`Scanned: ${studentId} at ${timeScanned} for ${today}`);
+                        lastScannedId = studentId;
+                        lastScanTime = currentTime;
+                    } else if (studentId && currentDayScannedIds.has(studentId)) {
+                        // Student already scanned for today
+                        scannedIdDisplay.textContent = `Already Scanned: ${studentId}`;
+                        outputDiv.querySelector('p').style.display = 'none'; // Hide "Scan a student..." message
+                        lastScannedId = studentId;
+                        lastScanTime = currentTime;
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(tick);
+        }
+        // --- Event Listeners and Initialization ---
+        startScanBtn.addEventListener('click', async () => {
+            if (stream) {
+                // Already scanning, just ensure UI is correct
+                startScanBtn.style.display = 'none';
+                stopScanBtn.style.display = 'block';
+                return;
+            }
+            try {
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); // 'environment' prefers rear camera
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // Important for iOS
+                video.play();
+                startScanBtn.style.display = 'none';
+                stopScanBtn.style.display = 'block';
+                outputDiv.querySelector('p').style.display = 'block'; // Show initial message
+                scannedIdDisplay.textContent = ''; // Clear previous scan display
+                tick(); // Start scanning loop
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                outputDiv.innerHTML = '<p class="message error">Error: Camera access denied or not available. Please allow camera access in your browser settings.</p>';
+            }
+        });
+        stopScanBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop()); // Stop camera stream
+                video.srcObject = null;
+                cancelAnimationFrame(animationFrameId); // Stop the scanning loop
+                stream = null;
+            }
+            startScanBtn.style.display = 'block';
+            stopScanBtn.style.display = 'none';
+            scannedIdDisplay.textContent = ''; // Clear any displayed ID
+            outputDiv.querySelector('p').style.display = 'block'; // Show initial message again
+            outputDiv.innerHTML = '<p>Scan a student\'s QR code.</p>'; // Reset error message if any
+        });
+        exportAllCsvBtn.addEventListener('click', exportAllAttendanceToCSV);
+        clearAllAttendanceBtn.addEventListener('click', clearAllSavedAttendance);
+        clearSelectedDayBtn.addEventListener('click', clearAttendanceForSelectedDay);
+        studentsAttendedList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-btn')) {
+                const idToRemove = event.target.dataset.id;
+                const dateToRemoveFrom = event.target.dataset.date;
+                removeStudentFromDay(idToRemove, dateToRemoveFrom);
+            }
+        });
+        dateSelector.addEventListener('change', (event) => {
+            renderAttendanceList(event.target.value);
+        });
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadAllAttendance);
+    </script>
+</body>
+</html>
