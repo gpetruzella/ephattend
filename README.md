@@ -1,4 +1,4 @@
-# QR Attendance Scanner & Generator
+# EphAttend: QR Attendance Scanner & Generator
 
 A complete, minimalist attendance solution for college instructors. Generate QR codes for your students directly from Canvas, then use the scanner app to take attendance in large classrooms. Everything runs locally with full privacy protection.
 
