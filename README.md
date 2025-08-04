@@ -13,7 +13,6 @@ A complete, minimalist attendance solution for college instructors. Generate QR 
 - **Canvas Integration**: Extract students directly from Canvas People page
 - **One-Click Generation**: Bookmarklet runs on any Canvas course
 - **Print-Ready Output**: Clean 2×6 grid layout for easy distribution
-- **Privacy-First**: No data leaves your browser
 
 ### 📱 Attendance Scanner  
 - **QR Code Scanning**: Uses device camera to scan student QR codes
@@ -85,7 +84,7 @@ Upload all files to any web hosting service and visit the URL.
 5. **Click "Generate & Print"** → opens print-ready QR codes
 6. **Save as PDF or print directly** → distribute to students
 
-### Attendance Scanner (Daily Use)
+### Attendance Scanner (Installation)
 1. **Visit the app URL** in your mobile browser
 2. **Install prompt appears** - tap "Install App" 
 3. **Grant camera permission** when requested
