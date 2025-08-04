@@ -45,7 +45,7 @@ This app is built as a Progressive Web App to solve a critical limitation: mobil
 ## 🚀 Quick Start
 
 ### Step 1: Generate QR Codes for Students
-1. **Visit the QR Generator page**: `ephattend-qr/index.html`
+1. **Visit the QR Generator page**: `gpetruzella.github.io/ephattend-qr/index.html`
 2. **Drag the bookmarklet** to your browser's bookmarks bar
 3. **Navigate to your Canvas course People page**
 4. **Click the bookmarklet** to extract students and generate QR codes
@@ -56,8 +56,8 @@ This app is built as a Progressive Web App to solve a critical limitation: mobil
 ### Option 1: GitHub Pages (Recommended)
 1. Fork this repository
 2. Enable GitHub Pages in repository Settings  
-3. **For QR Generation**: Visit `ephattend-qr/index.html` and bookmark the generator
-4. **For Attendance Scanning**: Visit `ephattend/index.html` and install as PWA
+3. **For QR Generation**: Visit `gpetruzella.github.io/ephattend-qr/index.html` and bookmark the generator
+4. **For Attendance Scanning**: Visit `gpetruzella.github.io/ephattend/index.html` and install as PWA
 
 ### Option 2: Local Development
 ```bash
