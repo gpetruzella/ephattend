@@ -44,56 +44,20 @@ This app is built as a Progressive Web App to solve a critical limitation: mobil
 ## 🚀 Quick Start
 
 ### Step 1: Generate QR Codes for Students
-1. **Visit the QR Generator page**: `gpetruzella.github.io/ephattend-qr/index.html`
-2. **Drag the bookmarklet** to your browser's bookmarks bar
-3. **Navigate to your Canvas course People page**
+1. **Visit the QR Generator page**: `gpetruzella.github.io/ephattend-qr`
+2. **Drag the bookmarklet button** to your browser's bookmarks bar
+3. **Navigate to your Canvas course People page** and ensure all student names are loaded
 4. **Click the bookmarklet** to extract students and generate QR codes
 5. **Print the PDF** and distribute QR codes to students
 
-### Step 2: Use the Attendance Scanner
-
-### Option 1: GitHub Pages (Recommended)
-1. Fork this repository
-2. Enable GitHub Pages in repository Settings  
-3. **For QR Generation**: Visit `gpetruzella.github.io/ephattend-qr/index.html` and bookmark the generator
-4. **For Attendance Scanning**: Visit `gpetruzella.github.io/ephattend/index.html` and install as PWA
-
-### Option 2: Local Development
-```bash
-# Clone the repository
-git clone [repository-url]
-cd qr-attendance-scanner
-
-# Serve locally (Python example)
-python -m http.server 8000
-
-# Visit http://localhost:8000
-# Install as PWA when prompted
-```
-
-### Option 3: Any Web Server
-Upload all files to any web hosting service and visit the URL.
-
-## 📱 Installation & Usage
-
-### QR Code Generator (One-Time Setup)
-1. **Visit the generator page** in your browser
-2. **Drag the bookmarklet button** to your bookmarks bar  
-3. **Navigate to Canvas People page** for any course
-4. **Click the bookmarklet** → automatically finds students
-5. **Click "Generate & Print"** → opens print-ready QR codes
-6. **Save as PDF or print directly** → distribute to students
-
-### Attendance Scanner (Installation)
-1. **Visit the app URL** in your mobile browser
-2. **Install prompt appears** - tap "Install App" 
-3. **Grant camera permission** when requested
-4. **App installs** to your home screen like a native app
+### Step 2: Install the Attendance Scanner
+1. **For Attendance Scanning**: Visit `gpetruzella.github.io/ephattend` and install as PWA if desired
+2. **Grant camera permission** when requested
 
 ### Daily Usage
 1. **Open the installed app** (works offline!)
 2. **Tap "Start Scanning"**
-3. **Point camera at student QR codes**
+3. **Students show QR codes** to camera
 4. **Students are automatically logged** with timestamp
 5. **Tap "Stop Scanning"** when finished
 6. **Export CSV** when needed
@@ -131,7 +95,6 @@ Upload all files to any web hosting service and visit the URL.
 
 ### Data Storage
 - **Local Storage**: All data stored in browser's localStorage
-- **Format**: JSON structure organized by date
 - **Privacy**: No data leaves the device unless exported
 - **Persistence**: Data survives browser restarts and app updates
 
@@ -139,47 +102,17 @@ Upload all files to any web hosting service and visit the URL.
 - **Installable**: Add to home screen functionality
 - **Offline**: Full functionality without internet
 - **Native Feel**: Standalone display mode
-- **Auto-Update**: Updates when files change on server
 
 ## 🔒 Privacy & Security
 
 - **Local-Only**: All attendance data stays on the device
 - **No Tracking**: No analytics or external connections
 - **HTTPS Required**: Camera access requires secure connection
-- **User Control**: Users can export or delete all data anytime
-
-## 🧪 Testing
-
-### QR Generator Testing
-- [ ] Bookmarklet installs correctly (appears in bookmarks bar)
-- [ ] Canvas People page detection works
-- [ ] Student extraction finds all enrolled students  
-- [ ] PDF generation creates print-ready QR codes
-- [ ] QR codes contain correct student names/IDs
-
-### Attendance Scanner Testing
-- [ ] PWA installs correctly on iOS/Android
-- [ ] Camera access works after installation  
-- [ ] QR codes scan and register attendance
-- [ ] Data persists across app restarts
-- [ ] CSV export downloads correctly
-- [ ] Multiple days of data handled properly
-- [ ] Remove/clear functions work as expected
-- [ ] Offline functionality works
-
-### QR Code Testing
-Generate test QR codes containing simple student IDs:
-- `STUDENT001`
-- `STUDENT002` 
-- `STUDENT003`
+- **User Control**: Faculty can export or delete all data anytime
 
 ## 🔧 Troubleshooting
 
 ### QR Generator Issues
-**Bookmarklet shows code instead of button:**
-- The JavaScript is too long for the HTML attribute
-- Use the manual bookmark creation method in the instructions
-
 **No students found on Canvas:**
 - Ensure you're on the Canvas "People" page (not Grades or Modules)
 - Scroll down to load all students (Canvas lazy-loads)
