@@ -1,6 +1,6 @@
 {
-  "name": "Williams College Attendance",
-  "short_name": "WC Attendance",
+  "name": "EphAttend",
+  "short_name": "EphAttend",
   "description": "A QR code attendance scanner for Williams College classrooms.",
   "start_url": "./index.html",
   "display": "standalone",
