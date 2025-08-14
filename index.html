@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Gerol Petruzella, using Claude Code">
-    <title>QR Attendance Scanner (Cumulative Prototype)</title>
+    <title>Williams College Attendance Scanner</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="description" content="QR code attendance scanner for college classrooms">
-    <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="A QR code attendance scanner for Williams College classrooms.">
+    <meta name="theme-color" content="#500082">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Attendance Scanner">
@@ -22,21 +22,21 @@
     
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Helvetica, Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f4;
-            color: #333;
+            color: #000000;
         }
         #container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            color: #2c3e50;
+            color: #500082;
             text-align: center;
             margin-bottom: 20px;
         }
@@ -44,7 +44,7 @@
             width: 100%;
             max-width: 400px; /* Adjust as needed */
             margin: 0 auto 20px auto;
-            border: 2px solid #ddd;
+            border: 2px solid #500082;
             border-radius: 8px;
             overflow: hidden;
             position: relative;
@@ -57,20 +57,20 @@
         #output {
             margin-top: 20px;
             padding: 15px;
-            background-color: #e9e9e9;
+            background-color: #E8D9FF;
             border-radius: 6px;
         }
         #attendance-section {
             margin-top: 20px;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #500082;
             border-radius: 6px;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
         }
         #attendance-section h2 {
             margin-top: 0;
             margin-bottom: 10px;
-            color: #2c3e50;
+            color: #500082;
         }
         #attendance-list {
             max-height: 300px;
@@ -94,7 +94,7 @@
             border-bottom: none;
         }
         .remove-btn {
-            background-color: #e74c3c;
+            background-color: #C86914;
             color: white;
             border: none;
             padding: 5px 10px;
@@ -103,13 +103,13 @@
             font-size: 0.8em;
         }
         .remove-btn:hover {
-            background-color: #c0392b;
+            background-color: #A05410;
         }
         button {
             display: block;
             width: 100%;
             padding: 10px 15px;
-            background-color: #28a745;
+            background-color: #500082;
             color: white;
             border: none;
             border-radius: 5px;
@@ -118,13 +118,14 @@
             margin-top: 15px;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #280050;
         }
         #export-all-csv-btn {
-             background-color: #007bff;
+             background-color: #FFBE0A;
+             color: #000000;
         }
         #export-all-csv-btn:hover {
-             background-color: #0056b3;
+             background-color: #E0A800;
         }
         .controls {
             display: flex;
@@ -136,6 +137,9 @@
         .controls button {
             flex: 1 1 auto; /* Allow buttons to grow and shrink */
             min-width: 150px; /* Ensure they don't get too small */
+        }
+        #clear-all-attendance-btn {
+            background-color: #B1008E;
         }
         .message {
             margin-top: 10px;
@@ -168,7 +172,7 @@
             box-sizing: border-box; /* Include padding in width */
         }
         .clear-day-btn {
-            background-color: #dc3545;
+            background-color: #FF7800;
             color: white;
             border: none;
             padding: 8px 12px;
@@ -182,7 +186,7 @@
         }
         /* PWA install prompt styling */
         #install-prompt {
-            background-color: #007bff;
+            background-color: #500082;
             color: white;
             padding: 15px;
             border-radius: 8px;
@@ -191,8 +195,8 @@
             display: none;
         }
         #install-prompt button {
-            background-color: white;
-            color: #007bff;
+            background-color: #FFBE0A;
+            color: #000000;
             margin-top: 10px;
             width: auto;
             display: inline-block;
@@ -209,19 +213,19 @@
             <button id="dismiss-install" style="background-color: transparent; color: white; border: 1px solid white;">Maybe Later</button>
         </div>
         
-        <h1>Class Attendance Scanner</h1>
+        <h1>Williams College Attendance Scanner</h1>
         <div id="video-container">
             <video id="qr-video"></video>
         </div>
         <div id="output" style="text-align: center;">
             <p>Scan a student's QR code.</p>
-            <p id="scanned-id-display" style="font-weight: bold; font-size: 1.2em; color: #007bff;"></p>
+            <p id="scanned-id-display" style="font-weight: bold; font-size: 1.2em; color: #500082;"></p>
         </div>
         <button id="start-scan-btn">Start Scanning</button>
-        <button id="stop-scan-btn" style="display: none; background-color: #dc3545;">Stop Scanning</button>
+        <button id="stop-scan-btn" style="display: none; background-color: #FF7800;">Stop Scanning</button>
         <div class="controls">
             <button id="export-all-csv-btn">Export All Attendance (CSV)</button>
-            <button id="clear-all-attendance-btn" style="background-color: #6c757d;">Clear All Saved Data</button>
+            <button id="clear-all-attendance-btn">Clear All Saved Data</button>
         </div>
         <div id="attendance-section">
             <div class="date-select-container">
