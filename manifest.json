@@ -1,11 +1,11 @@
 {
-  "name": "Class Attendance Scanner",
-  "short_name": "Attendance",
-  "description": "QR code attendance scanner for college classrooms",
+  "name": "Williams College Attendance",
+  "short_name": "WC Attendance",
+  "description": "A QR code attendance scanner for Williams College classrooms.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f4f4f4",
-  "theme_color": "#2c3e50",
+  "background_color": "#500082",
+  "theme_color": "#500082",
   "orientation": "portrait",
   "scope": "./",
   "icons": [
