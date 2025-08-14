@@ -380,10 +380,18 @@
             }
             attendanceForDay.forEach((student) => {
                 const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${student.id} - ${student.time}</span>
-                    <button class="remove-btn" data-id="${student.id}" data-date="${dateToView}">Remove</button>
-                `;
+
+                const span = document.createElement('span');
+                span.textContent = `${student.id} - ${student.time}`;
+
+                const button = document.createElement('button');
+                button.className = 'remove-btn';
+                button.textContent = 'Remove';
+                button.dataset.id = student.id;
+                button.dataset.date = dateToView;
+
+                li.appendChild(span);
+                li.appendChild(button);
                 studentsAttendedList.appendChild(li);
             });
             currentViewingDateSpan.textContent = dateToView;
