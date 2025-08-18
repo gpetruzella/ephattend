@@ -93,18 +93,6 @@
         #attendance-list li:last-child {
             border-bottom: none;
         }
-        .remove-btn {
-            background-color: #C86914;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
-        .remove-btn:hover {
-            background-color: #A05410;
-        }
         button {
             display: block;
             width: 100%;
@@ -388,36 +376,10 @@
                 const span = document.createElement('span');
                 span.textContent = `${student.id} - ${student.time}`;
 
-                const button = document.createElement('button');
-                button.className = 'remove-btn';
-                button.textContent = 'Remove';
-                button.dataset.id = student.id;
-                button.dataset.date = dateToView;
-
                 li.appendChild(span);
-                li.appendChild(button);
                 studentsAttendedList.appendChild(li);
             });
             currentViewingDateSpan.textContent = dateToView;
-        }
-        function removeStudentFromDay(idToRemove, dateToRemoveFrom) {
-            if (!allAttendanceRecords[dateToRemoveFrom]) return;
-            allAttendanceRecords[dateToRemoveFrom] = allAttendanceRecords[dateToRemoveFrom].filter(
-                student => student.id !== idToRemove
-            );
-            // If the removed student was from the *current* scanning day, update the set
-            if (dateToRemoveFrom === getTodayFormatted()) {
-                currentDayScannedIds.delete(idToRemove);
-            }
-            if (allAttendanceRecords[dateToRemoveFrom].length === 0) {
-                // If the day is now empty, remove the date key if it's not today's empty array
-                if (dateToRemoveFrom !== getTodayFormatted()) {
-                    delete allAttendanceRecords[dateToRemoveFrom];
-                }
-            }
-            saveAllAttendance();
-            populateDateSelector(); // Update options in case a day became empty and was removed
-            renderAttendanceList(dateToRemoveFrom); // Re-render the affected day
         }
         function exportAllAttendanceToCSV() {
             if (Object.keys(allAttendanceRecords).length === 0) {
@@ -576,13 +538,6 @@
         exportAllCsvBtn.addEventListener('click', exportAllAttendanceToCSV);
         clearAllAttendanceBtn.addEventListener('click', clearAllSavedAttendance);
         clearSelectedDayBtn.addEventListener('click', clearAttendanceForSelectedDay);
-        studentsAttendedList.addEventListener('click', (event) => {
-            if (event.target.classList.contains('remove-btn')) {
-                const idToRemove = event.target.dataset.id;
-                const dateToRemoveFrom = event.target.dataset.date;
-                removeStudentFromDay(idToRemove, dateToRemoveFrom);
-            }
-        });
         dateSelector.addEventListener('change', (event) => {
             renderAttendanceList(event.target.value);
         });
